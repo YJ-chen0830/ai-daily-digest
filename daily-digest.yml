@@ -1,0 +1,54 @@
+# AI 開源日報：每日自動產生並寄送
+#
+# 注意：schedule 的 cron 使用 UTC 時間。
+#   23:00 UTC = 台灣時間隔天早上 07:00
+# GitHub 官方文件註明排程可能延遲數分鐘到數十分鐘（尖峰時段），
+# 若想準時可改用外部 cron 服務打 workflow_dispatch API，一般用途不必。
+
+name: AI Daily Digest
+
+on:
+  schedule:
+    - cron: '0 23 * * *'   # 台灣時間每天 07:00
+  workflow_dispatch: {}     # 允許在 Actions 頁面手動觸發（部署後先手動測一次）
+
+permissions:
+  contents: write           # 需要寫入權限才能把日報存檔 commit 回 repo
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate and send digest
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 想調整參數可解除下列註解：
+          # DAYS_BACK: '7'
+          # MIN_STARS: '80'
+          # MAX_REPOS: '10'
+          # TOPICS: 'ai,llm,agents,rag,generative-ai,machine-learning'
+        run: python digest.py
+
+      - name: Commit digest archive
+        run: |
+          git config user.name "digest-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add digests/
+          git diff --cached --quiet || git commit -m "digest: $(TZ=Asia/Taipei date +%F)"
+          git push
