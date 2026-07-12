@@ -9,7 +9,7 @@ name: AI Daily Digest
 
 on:
   schedule:
-    - cron: '0 23 * * *'   # 台灣時間每天 07:00
+    - cron: '0 1 * * 1'   # 台灣時間每天 07:00
   workflow_dispatch: {}     # 允許在 Actions 頁面手動觸發（部署後先手動測一次）
 
 permissions:
@@ -39,9 +39,9 @@ jobs:
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # 想調整參數可解除下列註解：
-          # DAYS_BACK: '7'
+          # DAYS_BACK: '15'
           # MIN_STARS: '80'
-          # MAX_REPOS: '10'
+          # MAX_REPOS: '15'
           # TOPICS: 'ai,llm,agents,rag,generative-ai,machine-learning'
         run: python digest.py
 
